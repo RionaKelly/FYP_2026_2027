@@ -7,7 +7,7 @@
 #define GFX_BL 48
 Arduino_DataBus *bus = new Arduino_ESP32SPI(41 /* DC */, 42 /* CS */, 40 /* SCK */, 45 /* MOSI */, GFX_NOT_DEFINED /* MISO */);
 Arduino_GFX *gfx = new Arduino_ST7789(
-    bus, 39 /* RST */, 3 /* rotation */, true /* IPS */, 172 /* width */, 320 /* height */,
+    bus, 39 /* RST */, 1 /* rotation */, true /* IPS */, 172 /* width */, 320 /* height */,
     34 /* col offset 1 */, 0 /* row offset 1 */, 34 /* col offset 2 */, 0 /* row offset 2 */);
 
 const uint8_t bunny_bitmap [] = {
@@ -3517,6 +3517,7 @@ const uint16_t bg_bunny_bitmap [] = {
 String pet = "P"; // E = bird, P = bunny
 bool direction = true;
 int location = 2;
+int brightness = 220;
 
 void refresh_pet(float x, float y)
 {
@@ -3524,6 +3525,7 @@ void refresh_pet(float x, float y)
 	//gfx->fillRect(((location+2.5)*20), 20, 160, 160, RGB565_PURPLE);
 	//gfx->drawBitmap(x, y, bunny_bitmap, 120, 140, RGB565_PURPLE);
 }
+
 void display_pet(float x, float y)
 {
 	//gfx->drawBitmap(x, y, bunny_bitmap, 120, 140, RGB565_PINK);
@@ -3563,13 +3565,30 @@ void setup(void)
 
 	display_pet(90, 20);
 
-  Set_Color(0, 140, 225); // GRB for some reason, sets the outside RGB lights using a premade .h and .cpp file
+  Set_Color(0, 140, 225); // sets the outside RGB lights using a premade .h and .cpp file, GRB for some reason
+
+	pinMode(GFX_BL, OUTPUT); // sets up the backlight pin for setting
+	analogWrite(GFX_BL, brightness); // sets the brightness of the backlight to the brightness variable (0-255)
+
+	pinMode(13, INPUT_PULLUP); // sets the button to be able to be read
 
   delay(1000);
 }
 
 void loop()
 {
+	// sets the colour of the rgb depending on the button state
+	int buttonState = digitalRead(13);
+	if (buttonState == LOW) {
+		Set_Color(0, 0, 225);
+	}
+	else 	if (buttonState == HIGH) {
+		Set_Color(0, 255, 0);
+	}
+	else {
+		Set_Color(255, 0, 0);
+	}
+
 	refresh_pet((location+2.5)*20, 20);
 
   if (direction) {
