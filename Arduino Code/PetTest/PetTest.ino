@@ -3581,9 +3581,11 @@ void loop()
 	int buttonState = digitalRead(13);
 	if (buttonState == LOW) {
 		Set_Color(0, 0, 225);
+		//Serial.println("BUTTON PRESSED! (LOW)");
 	}
 	else 	if (buttonState == HIGH) {
 		Set_Color(0, 255, 0);
+		//Serial.println("BUTTON PRESSED! (HIGH)");
 	}
 	else {
 		Set_Color(255, 0, 0);
