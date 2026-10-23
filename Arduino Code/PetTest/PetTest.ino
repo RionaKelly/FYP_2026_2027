@@ -3571,6 +3571,7 @@ void setup(void)
 	analogWrite(GFX_BL, brightness); // sets the brightness of the backlight to the brightness variable (0-255)
 
 	pinMode(13, INPUT_PULLUP); // sets the button to be able to be read
+	pinMode(12, OUTPUT); // sets the led to output
 
   delay(1000);
 }
@@ -3581,14 +3582,12 @@ void loop()
 	int buttonState = digitalRead(13);
 	if (buttonState == LOW) {
 		Set_Color(0, 0, 225);
+		digitalWrite(12, HIGH); // if button is pressed turn on led
 		//Serial.println("BUTTON PRESSED! (LOW)");
-	}
-	else 	if (buttonState == HIGH) {
-		Set_Color(0, 255, 0);
-		//Serial.println("BUTTON PRESSED! (HIGH)");
 	}
 	else {
 		Set_Color(255, 0, 0);
+		digitalWrite(12, LOW); // if button is not pressed turn off led
 	}
 
 	refresh_pet((location+2.5)*20, 20);
@@ -3618,5 +3617,5 @@ void loop()
 
   Serial.println(location);
 
-  delay(1000);
+  delay(500);
 }
