@@ -10,12 +10,16 @@
 // Created by Bodmer 23/04/18
 
 #include "xbm.h"             // Sketch tab header for xbm images
-#include <RGB_lamp.h>
+#include <RGB_lamp.h>        // File for using RGB lights on device
 #include <TFT_eSPI.h>        // Hardware-specific library
+#include <SD.h>              // Library for interacting with SD card
 
 TFT_eSPI tft = TFT_eSPI();   // Invoke library
 
-int draw_count = 5;
+const int chipSelect = 16;   // SD Card Setup
+File myFile;
+
+int draw_count = 50;
 int x = 0;
 int y = 0;
 bool led_on = false;
@@ -34,6 +38,8 @@ void drawPet() {
   //             x  y  xbm   xbm width  xbm height  fg color   bg color
   tft.drawBitmap(x, y, bunny_in, logoWidth, logoHeight, TFT_PINK);
   tft.drawBitmap(x, y, bunny_out, logoWidth, logoHeight, TFT_BLACK);
+
+  Serial.println("Pet Drawn");
 }
 
 void setup()
@@ -52,16 +58,21 @@ void setup()
 
 	pinMode(13, INPUT_PULLUP); // sets the button to be able to be read
 	pinMode(12, OUTPUT); // sets the led to output
+
+  drawPet();
+
+  delay(1000);
 }
 
 void loop()
 {
   int buttonState = digitalRead(13);
 	if (buttonState == LOW) {
-    if (unpressed == true) {
+    if (unpressed == true) { // anything in this loop happens when the button is pressed/held, until release
       unpressed = false;
       analogWrite(TFT_BL, 30); // sets the brightness of the backlight to the brightness variable (0-255)
-      if (led_on) {
+
+      if (led_on) { // Check is the led is already on to only toggle it on or off when pressed, no matter how long it is held
         digitalWrite(12, LOW);
         led_on = false;
       } else {
@@ -78,7 +89,7 @@ void loop()
     analogWrite(TFT_BL, 120); // sets the brightness of the backlight to the brightness variable (0-255)
 	}
 
-  if (draw_count >= 5) {
+  if (draw_count >= 50) {
     drawPet();
     draw_count = 0;
   }
