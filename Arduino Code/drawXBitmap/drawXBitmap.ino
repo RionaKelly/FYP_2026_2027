@@ -19,7 +19,7 @@ TFT_eSPI tft = TFT_eSPI();   // Invoke library
 const int chipSelect = 16;   // SD Card Setup
 File myFile;
 
-int draw_count = 50;
+int draw_count = 1000;
 int x = 0;
 int y = 0;
 bool led_on = false;
@@ -42,6 +42,29 @@ void drawPet() {
   Serial.println("Pet Drawn");
 }
 
+//void handleSerial() {
+//    if (Serial.available() > 0) {
+//        digitalWrite(12, HIGH);
+//        led_on = true;
+//        Serial.println("LED On!");
+
+//        String incoming = Serial.readStringUntil('\n');
+//        incoming.trim();
+
+//        if (incoming == "Hello") {
+//            tft.fillScreen(TFT_GREEN);
+//            Serial.println("green!!!!");
+//        }
+//        else if (incoming == "0") {
+//            tft.fillScreen(TFT_RED);
+//            Serial.println("red!!!!");
+//        }
+//        else {
+//            Serial.println("this shit aint working");
+//        }
+//    }
+//}
+
 void setup()
 {
   Serial.begin(115200);
@@ -52,7 +75,7 @@ void setup()
   tft.fillScreen(TFT_WHITE); // Screen fill
 
   pinMode(TFT_BL, OUTPUT); // sets up the backlight pin for setting
-	analogWrite(TFT_BL, 120); // sets the brightness of the backlight to the brightness variable (0-255)
+	analogWrite(TFT_BL, 90); // sets the brightness of the backlight to the brightness variable (0-255)
 
   //Set_Color(0, 140, 225); // sets the outside RGB lights using a premade .h and .cpp file, GRB for some reason
 
@@ -66,18 +89,24 @@ void setup()
 
 void loop()
 {
+  //handleSerial();
+
+  // Button Checker 
   int buttonState = digitalRead(13);
 	if (buttonState == LOW) {
     if (unpressed == true) { // anything in this loop happens when the button is pressed/held, until release
+      Serial.println("Button Pressed");
       unpressed = false;
-      analogWrite(TFT_BL, 30); // sets the brightness of the backlight to the brightness variable (0-255)
+      analogWrite(TFT_BL, 20); // sets the brightness of the backlight to the brightness variable (0-255)
 
       if (led_on) { // Check is the led is already on to only toggle it on or off when pressed, no matter how long it is held
         digitalWrite(12, LOW);
         led_on = false;
+        Serial.println("LED Off :(");
       } else {
         digitalWrite(12, HIGH);
         led_on = true;
+        Serial.println("LED On!");
       }
     }
 		Set_Color(0, 200, 140);
@@ -89,7 +118,8 @@ void loop()
     analogWrite(TFT_BL, 120); // sets the brightness of the backlight to the brightness variable (0-255)
 	}
 
-  if (draw_count >= 50) {
+  // Draws the Pet when necessary
+  if (draw_count >= 1000) {
     drawPet();
     draw_count = 0;
   }
@@ -97,5 +127,5 @@ void loop()
     draw_count = draw_count + 1;
   }
 
-  delay(100);
+  delay(50);
 }
