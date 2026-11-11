@@ -19,6 +19,10 @@ TFT_eSPI tft = TFT_eSPI();   // Invoke library
 const int chipSelect = 16;   // SD Card Setup
 File myFile;
 
+#define BUTTON_PIN 13
+#define LED_PIN 12
+#define VMOTOR_PIN 11
+
 int draw_count = 0;
 int x = 26;
 int y = 90;
@@ -50,29 +54,27 @@ void drawPet() {
 }
 
 void handleSerial() {
-  if (Serial.available() > 0) {
-    String incoming = Serial.readStringUntil('\n');
-    incoming.trim();
+  String incoming = Serial.readStringUntil('\n');
+  incoming.trim();
 
-    if (incoming == "Hello") {
-      tft.fillScreen(TFT_GREEN);
-      bg_color = TFT_GREEN;
-      Serial.println("TO_GODOT'Hello' recieved, Green Screen");
-    }
-    else if (incoming == "0") {
-      tft.fillScreen(TFT_YELLOW);
-      bg_color = TFT_YELLOW;
-      Serial.println("TO_GODOT0 recieved, Yellow Screen");
-    }
-    else if (incoming == "Draw") {
-      drawPet();
-      Serial.println("TO_GODOT'Draw' recieved, Drawing Pet");
-    }
-    else {
-      tft.fillScreen(TFT_RED);
-      bg_color = TFT_RED;
-      Serial.println("TO_GODOTSignal not recognised, Red Screen");
-    }
+  if (incoming == "Hello") {
+    tft.fillScreen(TFT_GREEN);
+    bg_color = TFT_GREEN;
+    Serial.println("TO_GODOT'Hello' recieved, Green Screen");
+  }
+  else if (incoming == "0") {
+    tft.fillScreen(TFT_YELLOW);
+    bg_color = TFT_YELLOW;
+    Serial.println("TO_GODOT0 recieved, Yellow Screen");
+  }
+  else if (incoming == "Draw") {
+    drawPet();
+    Serial.println("TO_GODOT'Draw' recieved, Drawing Pet");
+  }
+  else {
+    tft.fillScreen(TFT_RED);
+    bg_color = TFT_RED;
+    Serial.println("TO_GODOTSignal not recognised, Red Screen");
   }
 }
 
@@ -90,8 +92,10 @@ void setup()
 
   //Set_Color(0, 140, 225); // sets the outside RGB lights using a premade .h and .cpp file, GRB for some reason
 
-	pinMode(13, INPUT_PULLUP); // sets the button to be able to be read
-	pinMode(12, OUTPUT); // sets the led to output
+	pinMode(BUTTON_PIN, INPUT_PULLUP); // sets the button to be able to be read
+	pinMode(LED_PIN, OUTPUT); // sets the led to output
+  pinMode(VMOTOR_PIN, OUTPUT); // sets the vibration motor to output
+  digitalWrite(VMOTOR_PIN, HIGH);
 
   drawPet();
 
@@ -101,10 +105,12 @@ void setup()
 
 void loop()
 {
-  handleSerial();
+  if (Serial.available() > 0) {
+    handleSerial();
+  }
 
   // Button Checker 
-  int buttonState = digitalRead(13);
+  int buttonState = digitalRead(BUTTON_PIN);
 	if (buttonState == LOW) {
     if (unpressed == true) { // anything in this loop happens when the button is pressed/held, until release
       Serial.println("Button Pressed");
@@ -112,20 +118,21 @@ void loop()
       analogWrite(TFT_BL, 160); // sets the brightness of the backlight to the brightness variable (0-255)
 
       if (led_on) { // Check is the led is already on to only toggle it on or off when pressed, no matter how long it is held
-        digitalWrite(12, LOW);
+        digitalWrite(LED_PIN, LOW);
         led_on = false;
         Serial.println("LED Off :(");
       } else {
-        digitalWrite(12, HIGH);
+        digitalWrite(LED_PIN, HIGH);
         led_on = true;
         Serial.println("LED On!");
       }
     }
 		Set_Color(0, 200, 140);
-		//digitalWrite(12, HIGH); // if button is pressed turn on led
+		//digitalWrite(VMOTOR_PIN, HIGH);
 	} else {
     unpressed = true;
 		Set_Color(0, 0, 0);
+    //digitalWrite(VMOTOR_PIN, LOW);
     analogWrite(TFT_BL, 100); // sets the brightness of the backlight to the brightness variable (0-255)
 	}
 
