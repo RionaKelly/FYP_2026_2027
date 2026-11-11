@@ -19,19 +19,26 @@ TFT_eSPI tft = TFT_eSPI();   // Invoke library
 const int chipSelect = 16;   // SD Card Setup
 File myFile;
 
-int draw_count = 1000;
-int x = 0;
-int y = 0;
+int draw_count = 0;
+int x = 26;
+int y = 90;
 bool led_on = false;
 bool unpressed = true;
+uint32_t bg_color = TFT_WHITE;
 
 void drawPet() {
   // Erase old one by drawing over with background colour
-  tft.drawBitmap(x, y, bunny_mask, logoWidth, logoHeight, TFT_WHITE);
+  tft.drawBitmap(x, y, bunny_mask, logoWidth, logoHeight, bg_color);
 
-  // Random x and y coordinates
-  x = (TFT_WIDTH/2) - (logoWidth/2);//random(tft.width()  - logoWidth);
-  y = (TFT_HEIGHT/2) - (logoHeight/2);//random(tft.height() - logoHeight);
+  // x and y coordinates
+  x = (TFT_WIDTH/2) - (logoWidth/2);
+  if (y == 90) {
+    y = (TFT_HEIGHT/2) - (logoHeight/2) + 20;
+  }
+  else {
+    y = (TFT_HEIGHT/2) - (logoHeight/2);
+  }
+  
 
   // Draw bitmap with top left corner at x,y with foreground and background colors
   // Bits set to 1 plot as the defined fg color, bits set to 0 are plotted as bg color
@@ -39,31 +46,35 @@ void drawPet() {
   tft.drawBitmap(x, y, bunny_in, logoWidth, logoHeight, TFT_PINK);
   tft.drawBitmap(x, y, bunny_out, logoWidth, logoHeight, TFT_BLACK);
 
-  Serial.println("Pet Drawn");
+  Serial.println("Pet Drawn at " + String(x) + ", " + String(y));
 }
 
-//void handleSerial() {
-//    if (Serial.available() > 0) {
-//        digitalWrite(12, HIGH);
-//        led_on = true;
-//        Serial.println("LED On!");
+void handleSerial() {
+  if (Serial.available() > 0) {
+    String incoming = Serial.readStringUntil('\n');
+    incoming.trim();
 
-//        String incoming = Serial.readStringUntil('\n');
-//        incoming.trim();
-
-//        if (incoming == "Hello") {
-//            tft.fillScreen(TFT_GREEN);
-//            Serial.println("green!!!!");
-//        }
-//        else if (incoming == "0") {
-//            tft.fillScreen(TFT_RED);
-//            Serial.println("red!!!!");
-//        }
-//        else {
-//            Serial.println("this shit aint working");
-//        }
-//    }
-//}
+    if (incoming == "Hello") {
+      tft.fillScreen(TFT_GREEN);
+      bg_color = TFT_GREEN;
+      Serial.println("TO_GODOT'Hello' recieved, Green Screen");
+    }
+    else if (incoming == "0") {
+      tft.fillScreen(TFT_YELLOW);
+      bg_color = TFT_YELLOW;
+      Serial.println("TO_GODOT0 recieved, Yellow Screen");
+    }
+    else if (incoming == "Draw") {
+      drawPet();
+      Serial.println("TO_GODOT'Draw' recieved, Drawing Pet");
+    }
+    else {
+      tft.fillScreen(TFT_RED);
+      bg_color = TFT_RED;
+      Serial.println("TO_GODOTSignal not recognised, Red Screen");
+    }
+  }
+}
 
 void setup()
 {
@@ -72,10 +83,10 @@ void setup()
 
   tft.begin();               // Initialise the display
   tft.setRotation(2);
-  tft.fillScreen(TFT_WHITE); // Screen fill
-
   pinMode(TFT_BL, OUTPUT); // sets up the backlight pin for setting
-	analogWrite(TFT_BL, 90); // sets the brightness of the backlight to the brightness variable (0-255)
+	analogWrite(TFT_BL, 100); // sets the brightness of the backlight to the brightness variable (0-255)
+  tft.fillScreen(bg_color); // Screen fill
+  Serial.println("TFT Setup Complete");
 
   //Set_Color(0, 140, 225); // sets the outside RGB lights using a premade .h and .cpp file, GRB for some reason
 
@@ -85,11 +96,12 @@ void setup()
   drawPet();
 
   delay(1000);
+  Serial.println("Setup Finished, Loop Starting...");
 }
 
 void loop()
 {
-  //handleSerial();
+  handleSerial();
 
   // Button Checker 
   int buttonState = digitalRead(13);
@@ -97,7 +109,7 @@ void loop()
     if (unpressed == true) { // anything in this loop happens when the button is pressed/held, until release
       Serial.println("Button Pressed");
       unpressed = false;
-      analogWrite(TFT_BL, 20); // sets the brightness of the backlight to the brightness variable (0-255)
+      analogWrite(TFT_BL, 160); // sets the brightness of the backlight to the brightness variable (0-255)
 
       if (led_on) { // Check is the led is already on to only toggle it on or off when pressed, no matter how long it is held
         digitalWrite(12, LOW);
@@ -114,12 +126,11 @@ void loop()
 	} else {
     unpressed = true;
 		Set_Color(0, 0, 0);
-		//digitalWrite(12, LOW); // if button is not pressed turn off led
-    analogWrite(TFT_BL, 120); // sets the brightness of the backlight to the brightness variable (0-255)
+    analogWrite(TFT_BL, 100); // sets the brightness of the backlight to the brightness variable (0-255)
 	}
 
   // Draws the Pet when necessary
-  if (draw_count >= 1000) {
+  if (draw_count >= 100) {
     drawPet();
     draw_count = 0;
   }
