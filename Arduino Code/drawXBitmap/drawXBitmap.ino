@@ -26,34 +26,11 @@ TFT_eSprite spr = TFT_eSprite(&tft);  // Declare Sprite object "spr" with pointe
 #define VMOTOR_PIN 11
 
 int draw_count = 0;
-int x = 26;
-int y = 90;
+int x = 0;
+int direction = true;
 bool led_on = false;
 bool unpressed = true;
 uint32_t bg_color = TFT_WHITE;
-
-void drawPet() {
-  // Erase old one by drawing over with background colour
-  //tft.drawBitmap(x, y, bunny_mask, logoWidth, logoHeight, bg_color);
-
-  // x and y coordinates
-  x = (TFT_WIDTH/2) - (logoWidth/2);
-  if (y == 90) {
-    y = (TFT_HEIGHT/2) - (logoHeight/2) + 20;
-  }
-  else {
-    y = (TFT_HEIGHT/2) - (logoHeight/2);
-  }
-  
-
-  // Draw bitmap with top left corner at x,y with foreground and background colors
-  // Bits set to 1 plot as the defined fg color, bits set to 0 are plotted as bg color
-  //             x  y  xbm   xbm width  xbm height  fg color   bg color
-  //tft.drawBitmap(x, y, bunny_in, logoWidth, logoHeight, TFT_PINK);
-  //tft.drawBitmap(x, y, bunny_out, logoWidth, logoHeight, TFT_BLACK);
-
-  Serial.println("Pet Drawn at " + String(x) + ", " + String(y));
-}
 
 void handleSerial() {
   String incoming = Serial.readStringUntil('\n');
@@ -69,25 +46,52 @@ void handleSerial() {
     bg_color = TFT_YELLOW;
     Serial.println("TO_GODOT0 recieved, Yellow Screen");
   }
-  else if (incoming == "Draw") {
-    drawPet();
-    Serial.println("TO_GODOT'Draw' recieved, Drawing Pet");
-  }
   else {
     tft.fillScreen(TFT_RED);
     bg_color = TFT_RED;
     Serial.println("TO_GODOTSignal not recognised, Red Screen");
   }
+  //spr.fillSprite(bg_color);
+  //spr.drawBitmap(0, y, bunny_in, logoWidth, logoHeight, TFT_PINK);
+  //spr.drawBitmap(0, y, bunny_out, logoWidth, logoHeight, TFT_BLACK);
+  //spr.pushSprite(26, 70);
 }
 
 void setupSprite() {
-  spr.setColorDepth(4); //Set or get the colour depth to 1, 4, 8 or 16 bits
-  spr.createSprite(80, 80); // Create a sprite of defined size
-  spr.pushImage(0, 0, logoWidth, logoHeight, (uint16_t *)bunny);// push the image, only need to do this once
+  //spr.setColorDepth(4); //Set or get the colour depth to 1, 4, 8 or 16 bits
+  Serial.println(String(spr.getColorDepth()));
+  spr.createSprite(TFT_HEIGHT, TFT_WIDTH); // Create a sprite of defined size
+  //spr.pushImage(0, 0, logoWidth, logoHeight, (uint16_t *)bunny);// push the image, only need to do this once
 }
 
 void drawSprite() {
-  spr.pushSprite(TFT_WIDTH / 2 - logoWidth / 2, TFT_HEIGHT / 2 - logoHeight / 2);
+  //spr.fillCircle(0, 0, 40, TFT_RED);
+  //spr.pushSprite(TFT_WIDTH / 2 - logoWidth / 2, TFT_HEIGHT / 2 - logoHeight / 2);
+  //Serial.println("Pet Drawn");
+
+  //spr.drawBitmap(0, 0, bunny_mask, logoWidth, logoHeight, TFT_BLUE);
+  spr.fillSprite(bg_color);
+  // x and y coordinates
+  //x = (TFT_WIDTH/2) - (logoWidth/2);
+  if (x == 20) {
+    if (direction) {
+      x = 40; // (TFT_HEIGHT/2) - (logoHeight/2) + 20
+    }
+    else {
+      x = 0; // (TFT_HEIGHT/2) - (logoHeight/2) - 20
+    }
+  }
+  else {
+    x = 20;
+    direction = !direction;
+  }
+  // Draw bitmap with top left corner at x,y with foreground and background colors
+  // Bits set to 1 plot as the defined fg color, bits set to 0 are plotted as bg color
+  //             x  y  xbm   xbm width  xbm height  fg color   bg color
+  spr.drawBitmap(x, (TFT_WIDTH - logoHeight), bunny_in, logoWidth, logoHeight, TFT_PINK);
+  spr.drawBitmap(x, (TFT_WIDTH - logoHeight), bunny_out, logoWidth, logoHeight, TFT_BLACK);
+
+  spr.pushSprite(0, 0);
 }
 
 void setup()
@@ -96,10 +100,10 @@ void setup()
   Serial.println("Bitmap Display Test");
 
   tft.begin();               // Initialise the display
-  tft.setRotation(2);
+  tft.setRotation(1);
   pinMode(TFT_BL, OUTPUT); // sets up the backlight pin for setting
 	analogWrite(TFT_BL, 100); // sets the brightness of the backlight to the brightness variable (0-255)
-  tft.fillScreen(bg_color); // Screen fill
+  tft.fillScreen(TFT_BLUE); // Screen fill
   Serial.println("TFT Setup Complete");
 
   setupSprite();
@@ -111,7 +115,6 @@ void setup()
   pinMode(VMOTOR_PIN, OUTPUT); // sets the vibration motor to output
   digitalWrite(VMOTOR_PIN, HIGH);
 
-  //drawPet();
   drawSprite();
 
   delay(1000);
@@ -152,8 +155,7 @@ void loop()
 	}
 
   // Draws the Pet after set amount of loops
-  if (draw_count >= 50) {
-    //drawPet();
+  if (draw_count >= 10) {
     drawSprite();
     draw_count = 0;
   }

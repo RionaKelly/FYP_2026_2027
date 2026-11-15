@@ -9,8 +9,8 @@
 // the 50 height then means array uses 50 x 7 = 350 bytes of FLASH
 // The library ignores the padding bits when drawing the image on the display.
 
-#define logoWidth  80//120  // logo width
-#define logoHeight 80//140  // logo height
+#define logoWidth  120  // logo width
+#define logoHeight 140  // logo height
 
 
 // Image is stored in this array
