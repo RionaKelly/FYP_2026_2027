@@ -27,11 +27,16 @@ TFT_eSprite spr = TFT_eSprite(&tft);  // Declare Sprite object "spr" with pointe
 
 int draw_count = 0;
 int x = 0;
+int y = 0;
 int direction = true;
+int sprite_spot = 0;
 bool led_on = false;
 bool unpressed = true;
 uint32_t bg_color = TFT_WHITE;
+int center_x = (TFT_HEIGHT/2) - (logoHeight/2);
+int sprite_frame = -1;
 
+// Handles the serial inputs every loop if data has been recieved, doing something specific depending on what was read
 void handleSerial() {
   String incoming = Serial.readStringUntil('\n');
   incoming.trim();
@@ -57,41 +62,101 @@ void handleSerial() {
   //spr.pushSprite(26, 70);
 }
 
+// Sets up the sprites once so that they can be drawn to the screen
 void setupSprite() {
   //spr.setColorDepth(4); //Set or get the colour depth to 1, 4, 8 or 16 bits
-  Serial.println(String(spr.getColorDepth()));
   spr.createSprite(TFT_HEIGHT, TFT_WIDTH); // Create a sprite of defined size
   //spr.pushImage(0, 0, logoWidth, logoHeight, (uint16_t *)bunny);// push the image, only need to do this once
 }
 
+// Draws the sprite as the correct frame when called
 void drawSprite() {
-  //spr.fillCircle(0, 0, 40, TFT_RED);
-  //spr.pushSprite(TFT_WIDTH / 2 - logoWidth / 2, TFT_HEIGHT / 2 - logoHeight / 2);
-  //Serial.println("Pet Drawn");
-
   //spr.drawBitmap(0, 0, bunny_mask, logoWidth, logoHeight, TFT_BLUE);
-  spr.fillSprite(bg_color);
-  // x and y coordinates
-  //x = (TFT_WIDTH/2) - (logoWidth/2);
-  if (x == 20) {
-    if (direction) {
-      x = 40; // (TFT_HEIGHT/2) - (logoHeight/2) + 20
-    }
-    else {
-      x = 0; // (TFT_HEIGHT/2) - (logoHeight/2) - 20
-    }
+  spr.fillSprite(bg_color);//(bg_color);
+  if (direction) {
+    sprite_frame += 1;
   }
   else {
-    x = 20;
-    direction = !direction;
+    sprite_frame -= 1;
   }
-  // Draw bitmap with top left corner at x,y with foreground and background colors
-  // Bits set to 1 plot as the defined fg color, bits set to 0 are plotted as bg color
-  //             x  y  xbm   xbm width  xbm height  fg color   bg color
-  spr.drawBitmap(x, (TFT_WIDTH - logoHeight), bunny_in, logoWidth, logoHeight, TFT_PINK);
-  spr.drawBitmap(x, (TFT_WIDTH - logoHeight), bunny_out, logoWidth, logoHeight, TFT_BLACK);
 
+  if (sprite_frame > 7 && direction) {
+    sprite_frame = 0; // Sets the frame to 0 once it reaches the right end (8 frames total)
+    sprite_spot += 1;
+    if (sprite_spot > 4) {
+      direction = false;
+    }
+  }
+  else if (sprite_frame < 0 && !direction) {
+    sprite_frame = 7; // Sets the frame to 7 once it reaches the left end (8 frames total)
+    sprite_spot -= 1;
+    if (sprite_spot < 0) {
+      direction = true;
+    }
+  } 
+
+  int chosen_sprite = 0; // 0 = base, 1 = squash, 2 = stretch, 3 = smile, 4 = sit
+
+  switch (sprite_frame) {
+    case 0:
+      chosen_sprite = 0;
+      y = (TFT_WIDTH - logoHeight);
+      break;
+    case 1:
+      chosen_sprite = 1;
+      y = (TFT_WIDTH - logoHeight);
+      break;
+    case 2:
+      chosen_sprite = 0;
+      y = (TFT_WIDTH - logoHeight);
+      break;
+    case 3:
+      chosen_sprite = 2;
+      y = (TFT_WIDTH - logoHeight) - 10;
+      if (direction) {
+        x = x + 10;
+      }
+      else {
+        x = x - 10;
+      }
+      break;
+    case 4:
+      chosen_sprite = 3;
+      y = (TFT_WIDTH - logoHeight) - 20;
+      if (direction) {
+        x = x + 10;
+      }
+      else {
+        x = x - 10;
+      }
+      break;
+    case 5:
+      chosen_sprite = 2;
+      y = (TFT_WIDTH - logoHeight);
+      if (direction) {
+        x = x + 10;
+      }
+      else {
+        x = x - 10;
+      }
+      break;
+    case 6:
+      chosen_sprite = 1;
+      y = (TFT_WIDTH - logoHeight);
+      break;
+    case 7:
+      chosen_sprite = 0;
+      y = (TFT_WIDTH - logoHeight);
+      break;
+  }
+
+  // Draw bitmap with top left corner at x,y with foreground and background colors
+  //             x  y  xbm   xbm width  xbm height  fg color   bg color
+  spr.drawBitmap(x, y, sprite_array[chosen_sprite], logoWidth, logoHeight, TFT_PINK);
+  spr.drawBitmap(x, y, sprite_array[chosen_sprite + 5], logoWidth, logoHeight, TFT_BLACK);
+  spr.setRotation(2);
   spr.pushSprite(0, 0);
+  Serial.println("Sprite drawn, frame: " + String(sprite_frame) + ", moving right: " + String(direction) + ", spot: " + String(sprite_spot));
 }
 
 void setup()
@@ -155,7 +220,7 @@ void loop()
 	}
 
   // Draws the Pet after set amount of loops
-  if (draw_count >= 10) {
+  if (draw_count >= 1) {
     drawSprite();
     draw_count = 0;
   }
