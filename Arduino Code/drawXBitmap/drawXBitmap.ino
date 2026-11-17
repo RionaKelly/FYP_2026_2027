@@ -22,19 +22,22 @@ TFT_eSprite spr = TFT_eSprite(&tft);  // Declare Sprite object "spr" with pointe
 //File myFile;
 
 #define BUTTON_PIN 13
-#define LED_PIN 12
-#define VMOTOR_PIN 11
+#define RED_LED_PIN 12
+#define GREEN_LED_PIN 11
+#define VMOTOR_PIN 10
 
 int draw_count = 0;
 int x = 0;
 int y = 0;
 int direction = true;
 int sprite_spot = 0;
-bool led_on = false;
+bool red_led_on = false;
+bool green_led_on = false;
 bool unpressed = true;
 uint32_t bg_color = TFT_WHITE;
 int center_x = (TFT_HEIGHT/2) - (logoHeight/2);
 int sprite_frame = -1;
+int green_led_time = 0;
 
 // Handles the serial inputs every loop if data has been recieved, doing something specific depending on what was read
 void handleSerial() {
@@ -56,10 +59,7 @@ void handleSerial() {
     bg_color = TFT_RED;
     Serial.println("TO_GODOTSignal not recognised, Red Screen");
   }
-  //spr.fillSprite(bg_color);
-  //spr.drawBitmap(0, y, bunny_in, logoWidth, logoHeight, TFT_PINK);
-  //spr.drawBitmap(0, y, bunny_out, logoWidth, logoHeight, TFT_BLACK);
-  //spr.pushSprite(26, 70);
+  digitalWrite(GREEN_LED_PIN, HIGH);
 }
 
 // Sets up the sprites once so that they can be drawn to the screen
@@ -69,29 +69,50 @@ void setupSprite() {
   //spr.pushImage(0, 0, logoWidth, logoHeight, (uint16_t *)bunny);// push the image, only need to do this once
 }
 
+// Flips a given Bitmap
+const unsigned char* flipBitmap(const unsigned char* bitmap) {
+  for (int i = 0; i < 3200; i++) {
+    x = i + 8;
+    Serial.println(String(bitmap[i]));
+  }
+  //Serial.println(bitmap[105000]);
+
+  unsigned char new_bitmap [] {
+  };
+  return new_bitmap;
+}
+
 // Draws the sprite as the correct frame when called
 void drawSprite() {
   //spr.drawBitmap(0, 0, bunny_mask, logoWidth, logoHeight, TFT_BLUE);
   spr.fillSprite(bg_color);//(bg_color);
   if (direction) {
-    sprite_frame += 1;
+    sprite_frame++;
   }
   else {
-    sprite_frame -= 1;
+    sprite_frame--;
   }
 
   if (sprite_frame > 7 && direction) {
-    sprite_frame = 0; // Sets the frame to 0 once it reaches the right end (8 frames total)
-    sprite_spot += 1;
-    if (sprite_spot > 4) {
-      direction = false;
+    if (sprite_spot > 3) {
+      if (sprite_frame > 14) {
+        direction = false;
+      }
+    }
+    else{
+      sprite_frame = 0; // Sets the frame to 0 once it reaches the right end (8 frames total)
+      sprite_spot++;
     }
   }
   else if (sprite_frame < 0 && !direction) {
-    sprite_frame = 7; // Sets the frame to 7 once it reaches the left end (8 frames total)
-    sprite_spot -= 1;
-    if (sprite_spot < 0) {
-      direction = true;
+    if (sprite_spot < 1) {
+      if (sprite_frame < -7) {
+        direction = true;
+      }
+    }
+    else {
+      sprite_frame = 7; // Sets the frame to 7 once it reaches the left end (8 frames total)
+      sprite_spot--;
     }
   } 
 
@@ -148,12 +169,19 @@ void drawSprite() {
       chosen_sprite = 0;
       y = (TFT_WIDTH - logoHeight);
       break;
+    default: 
+      chosen_sprite = 4;
+      y = (TFT_WIDTH - logoHeight);
+      break;
   }
 
   // Draw bitmap with top left corner at x,y with foreground and background colors
   //             x  y  xbm   xbm width  xbm height  fg color   bg color
   spr.drawBitmap(x, y, sprite_array[chosen_sprite], logoWidth, logoHeight, TFT_PINK);
   spr.drawBitmap(x, y, sprite_array[chosen_sprite + 5], logoWidth, logoHeight, TFT_BLACK);
+  if (!direction) {
+    spr.fillRect(x, (TFT_WIDTH - logoHeight), 160, 20 , TFT_RED);
+  }
   spr.setRotation(2);
   spr.pushSprite(0, 0);
   Serial.println("Sprite drawn, frame: " + String(sprite_frame) + ", moving right: " + String(direction) + ", spot: " + String(sprite_spot));
@@ -176,9 +204,9 @@ void setup()
   //Set_Color(0, 140, 225); // sets the outside RGB lights using a premade .h and .cpp file, GRB for some reason
 
 	pinMode(BUTTON_PIN, INPUT_PULLUP); // sets the button to be able to be read
-	pinMode(LED_PIN, OUTPUT); // sets the led to output
+	pinMode(RED_LED_PIN, OUTPUT); // sets the led to output
+  pinMode(GREEN_LED_PIN, OUTPUT); // sets the led to output
   pinMode(VMOTOR_PIN, OUTPUT); // sets the vibration motor to output
-  digitalWrite(VMOTOR_PIN, HIGH);
 
   drawSprite();
 
@@ -189,7 +217,14 @@ void setup()
 void loop()
 {
   if (Serial.available() > 0) {
+    digitalWrite(GREEN_LED_PIN, HIGH);
+    green_led_on = true;
     handleSerial();
+    green_led_time = millis();
+  }
+  else if (green_led_on && millis() > green_led_time + 1000) {
+    digitalWrite(GREEN_LED_PIN, LOW);
+    green_led_on = false;
   }
 
   // Button Checker 
@@ -199,14 +234,15 @@ void loop()
       Serial.println("Button Pressed");
       unpressed = false;
       analogWrite(TFT_BL, 160); // sets the brightness of the backlight to the brightness variable (0-255)
+      digitalWrite(VMOTOR_PIN, HIGH);
 
-      if (led_on) { // Check is the led is already on to only toggle it on or off when pressed, no matter how long it is held
-        digitalWrite(LED_PIN, LOW);
-        led_on = false;
+      if (red_led_on) { // Check is the led is already on to only toggle it on or off when pressed, no matter how long it is held
+        digitalWrite(RED_LED_PIN, LOW);
+        red_led_on = false;
         Serial.println("LED Off :(");
       } else {
-        digitalWrite(LED_PIN, HIGH);
-        led_on = true;
+        digitalWrite(RED_LED_PIN, HIGH);
+        red_led_on = true;
         Serial.println("LED On!");
       }
     }
@@ -217,6 +253,7 @@ void loop()
 		Set_Color(0, 0, 0);
     //digitalWrite(VMOTOR_PIN, LOW);
     analogWrite(TFT_BL, 100); // sets the brightness of the backlight to the brightness variable (0-255)
+    digitalWrite(VMOTOR_PIN, LOW);
 	}
 
   // Draws the Pet after set amount of loops
