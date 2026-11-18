@@ -122,10 +122,16 @@ void drawSprite() {
     case 0:
       chosen_sprite = 0;
       y = (TFT_WIDTH - logoHeight);
+      if (!direction) {
+        digitalWrite(VMOTOR_PIN, LOW);
+      }
       break;
     case 1:
       chosen_sprite = 1;
       y = (TFT_WIDTH - logoHeight);
+      if (!direction) {
+        digitalWrite(VMOTOR_PIN, HIGH);
+      }
       break;
     case 2:
       chosen_sprite = 0;
@@ -168,10 +174,16 @@ void drawSprite() {
     case 7:
       chosen_sprite = 0;
       y = (TFT_WIDTH - logoHeight);
+      if (direction) {
+        digitalWrite(VMOTOR_PIN, HIGH);
+      }
       break;
     default: 
       chosen_sprite = 4;
       y = (TFT_WIDTH - logoHeight);
+      if (direction) {
+        digitalWrite(VMOTOR_PIN, LOW);
+      }
       break;
   }
 
