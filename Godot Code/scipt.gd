@@ -28,7 +28,7 @@ func _ready():
 		serial.close()
 		print("Serial Close")
 
-# SECURITY
+# SECURITY_NOTES
 # 1. The only information transferred both ways are:
 # 	a) The initial connection trigger and check to make sure both devices are connected.
 # 	b) The save data once connection is confirmed
