@@ -39,6 +39,9 @@ int center_x = (TFT_HEIGHT/2) - (logoHeight/2);
 int sprite_frame = -1;
 int green_led_time = 0;
 
+// Settings
+bool vibration_on = true;
+
 // Handles the serial inputs every loop if data has been recieved, doing something specific depending on what was read
 void handleSerial() {
   String incoming = Serial.readStringUntil('\n');
@@ -60,6 +63,18 @@ void handleSerial() {
     Serial.println("TO_GODOTSignal not recognised, Red Screen");
   }
   digitalWrite(GREEN_LED_PIN, HIGH);
+}
+
+// Handles device vibration
+void handleVibration(int value) {
+  if (vibration_on){
+    if (value == 1) {
+      digitalWrite(VMOTOR_PIN, HIGH);
+    }
+    else if (unpressed) {
+      digitalWrite(VMOTOR_PIN, LOW);
+    }
+  }
 }
 
 // Sets up the sprites once so that they can be drawn to the screen
@@ -123,14 +138,14 @@ void drawSprite() {
       chosen_sprite = 0;
       y = (TFT_WIDTH - logoHeight);
       if (!direction) {
-        digitalWrite(VMOTOR_PIN, LOW);
+        handleVibration(0);
       }
       break;
     case 1:
       chosen_sprite = 1;
       y = (TFT_WIDTH - logoHeight);
       if (!direction) {
-        digitalWrite(VMOTOR_PIN, HIGH);
+        handleVibration(1);
       }
       break;
     case 2:
@@ -175,14 +190,14 @@ void drawSprite() {
       chosen_sprite = 0;
       y = (TFT_WIDTH - logoHeight);
       if (direction) {
-        digitalWrite(VMOTOR_PIN, HIGH);
+        handleVibration(1);
       }
       break;
     default: 
       chosen_sprite = 4;
       y = (TFT_WIDTH - logoHeight);
       if (direction) {
-        digitalWrite(VMOTOR_PIN, LOW);
+        handleVibration(0);
       }
       break;
   }
@@ -246,7 +261,7 @@ void loop()
       Serial.println("Button Pressed");
       unpressed = false;
       analogWrite(TFT_BL, 160); // sets the brightness of the backlight to the brightness variable (0-255)
-      digitalWrite(VMOTOR_PIN, HIGH);
+      handleVibration(1);
 
       if (red_led_on) { // Check is the led is already on to only toggle it on or off when pressed, no matter how long it is held
         digitalWrite(RED_LED_PIN, LOW);
@@ -265,7 +280,7 @@ void loop()
 		Set_Color(0, 0, 0);
     //digitalWrite(VMOTOR_PIN, LOW);
     analogWrite(TFT_BL, 100); // sets the brightness of the backlight to the brightness variable (0-255)
-    digitalWrite(VMOTOR_PIN, LOW);
+    handleVibration(0);
 	}
 
   // Draws the Pet after set amount of loops
