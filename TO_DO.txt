@@ -1,0 +1,10 @@
+NECESSARY:
+- UI/Art Mockups
+- Finish Presentation
+- Create demo video
+- Try get speaker from jeremy
+
+SECONDARY:
+- Improve Godot app
+- Improve device gampeplay
+    
